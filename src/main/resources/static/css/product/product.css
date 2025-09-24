@@ -1,0 +1,203 @@
+/* ====== product page (LEFT FIXED PANEL + RIGHT SCROLL TABLE) ====== */
+:root{
+  --header-h: 64px;
+  --footer-h: 0px;
+
+  --gap: 8px;
+  --pad: 8px;
+
+  --left-w-tab: 300px;
+  --left-w-pc : 320px;
+
+  --font-xs: 10px;   /* ← 小さく */
+  --font-s : 11px;   /* ← 小さく */
+  --ctl-h  : 22px;   /* ← 高さも圧縮 */
+}
+
+* { box-sizing: border-box; }
+
+body{
+  background:#121212;
+  color:#EEE;
+  overflow:hidden;
+  margin:0;
+}
+
+/* ===== コンテナ ===== */
+.product-page-container{
+  display:flex;
+  flex-direction:column;
+  gap:var(--gap);
+  padding:var(--pad);
+  width:100%;
+  min-height:calc(100vh - var(--header-h) - var(--footer-h));
+}
+
+/* ===== 左パネル ===== */
+.search-panel{
+  background:#171717;
+  border:1px solid rgba(255,140,0,.22);
+  border-radius:10px;
+  padding:6px;                  /* ← 内側も狭める */
+  display:flex;
+  flex-direction:column;
+  gap:4px;                      /* ← 縦間隔も縮小 */
+  box-shadow:0 8px 22px rgba(0,0,0,.32);
+  overflow:hidden;
+  font-size:var(--font-xs);
+}
+
+/* ラベル＆入力 */
+.search-panel form label{
+  display:flex;
+  flex-direction:column;
+  gap:1px;
+  font-size:var(--font-xs);
+  font-weight:600;   /* ← 少し軽く */
+  color:#f1dcc9;
+  margin:0;
+}
+.search-panel input,
+.search-panel select,
+.search-panel textarea{
+  appearance:none;
+  background:#1e1e1e;
+  color:#EEE8E1;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:4px;     /* ← 角丸も小さめ */
+  padding:2px 4px;       /* ← 内側余白を減らす */
+  font-size:var(--font-xs);
+  line-height:1.1;
+  min-height:var(--ctl-h);
+  height:var(--ctl-h);
+  outline:none;
+}
+.search-panel textarea{
+  resize:vertical;
+  min-height:var(--ctl-h);
+}
+.search-panel input:focus,
+.search-panel select:focus,
+.search-panel textarea:focus{
+  border-color:rgba(255,153,0,.7);
+  box-shadow:0 0 0 1px rgba(255,153,0,.18);
+  background:#212121;
+}
+
+/* 検索・リセットボタン */
+.search-panel button{
+  width:100%;
+  border-radius:4px;
+  padding:0 6px;
+  height:var(--ctl-h);
+  font-weight:700;
+  font-size:var(--font-xs);
+  cursor:pointer;
+  background:linear-gradient(135deg,#ff7b00,#ff4d00);
+  color:#0b0b0b;
+  box-shadow:0 3px 10px rgba(255,123,0,.18);
+  margin-top:3px;
+}
+.search-panel button:hover{ filter:saturate(106%); }
+
+/* 管理者ボタン */
+.product-actions{
+  margin-top:4px;
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+}
+.product-actions button{
+  border-radius:4px;
+  padding:0 6px;
+  height:var(--ctl-h);
+  font-size:var(--font-xs);
+  background:#1f1f1f;
+  color:#f1dcc9;
+  border:1px solid rgba(255,255,255,.12);
+}
+
+/* 複数選択 */
+.search-panel select[multiple]{ min-height:90px; } /* ← 少し低め */
+
+/* ===== 右テーブル ===== */
+.product-table{
+  width:100%;
+  background:#161616;
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:10px;
+  box-shadow:0 8px 22px rgba(0,0,0,.28);
+  height:calc(100vh - var(--header-h) - var(--footer-h) - var(--pad)*2);
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+}
+.product-table table{
+  width:100%;
+  border-collapse:collapse;
+}
+.product-table thead th{
+  position:sticky; top:0; z-index:1;
+  background:#1c1c1c;
+  color:#ffd9b3;
+  text-align:left;
+  font-weight:700;
+  border-bottom:1px solid rgba(255,153,0,.18);
+  font-size:var(--font-s);
+}
+.product-table th,
+.product-table td{
+  padding:3px 4px; /* ← 余白縮小 */
+  border-bottom:1px solid rgba(255,255,255,.06);
+  border-right:1px solid rgba(255,255,255,.06);
+  font-size:var(--font-xs);
+  line-height:1.1;
+  color:#EEE8E1;
+  white-space:nowrap;
+}
+.product-table th:last-child,
+.product-table td:last-child{ border-right:none; }
+
+.product-table tbody{ display:block; overflow:auto; }
+.product-table thead,
+.product-table tbody tr{ display:table; width:100%; table-layout:fixed; }
+.product-table tbody tr:hover{ background:rgba(255,153,0,.06); }
+tr.selected{ background-color:rgba(255,153,0,.16)!important; color:#000!important; }
+
+/* ===== レスポンシブ ===== */
+@media (min-width:768px){
+  .product-page-container{
+    display:grid;
+    grid-template-columns: var(--left-w-tab) 1fr; /* ← 元に戻す */
+    gap:var(--gap);
+    height:calc(100vh - var(--header-h) - var(--footer-h));
+  }
+  .search-panel{
+    position:sticky;
+    top:var(--pad);
+    height:calc(100vh - var(--header-h) - var(--footer-h) - var(--pad)*2);
+    display:grid;
+    grid-auto-rows:min-content;
+    align-content:start;
+  }
+  .search-panel form label{
+    flex-direction:row;
+    align-items:center;
+    gap:4px;
+  }
+  .search-panel form label > input,
+  .search-panel form label > select,
+  .search-panel form label > textarea{
+    flex:1 1 auto;
+    min-width:0;
+  }
+  .search-panel form label > input[type="date"] + input[type="date"]{
+    margin-left:4px;
+  }
+  .product-table td{ max-width:160px; }
+}
+@media (min-width:1024px){
+  .product-page-container{
+    grid-template-columns: var(--left-w-pc) 1fr; /* ← 元に戻す */
+  }
+}

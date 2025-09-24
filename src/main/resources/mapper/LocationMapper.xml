@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.jp.dataxeed.pm.mapper.LocationMapper">
+
+  <resultMap id="locationResultMap" type="com.jp.dataxeed.pm.entity.LocationEntity">
+    <id property="id" column="id"/>
+    <result property="name" column="name"/>
+    <result property="deleteFlag" column="delete_flag"/>
+    <result property="createdAt" column="created_at"/>
+    <result property="updatedAt" column="updated_at"/>
+  </resultMap>
+
+  <!--全取得-->
+  <select id="findAll" resultMap="locationResultMap">
+    SELECT * FROM locations WHERE delete_flag = false
+  </select>
+
+  <!-- 単体取得 -->
+  <select id="findById" parameterType="int" resultMap="locationResultMap">
+    SELECT id, name, delete_flag, created_at, updated_at
+    FROM locations
+    WHERE id = #{id}
+  </select>
+
+  <!-- 追加 -->
+  <insert id="insertToSave"
+          parameterType="com.jp.dataxeed.pm.entity.LocationEntity"
+          useGeneratedKeys="true"
+          keyProperty="id">
+    INSERT INTO locations (name, delete_flag, created_at, updated_at)
+    VALUES (#{name}, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+  </insert>
+
+  <!-- 更新 -->
+  <update id="updateToSave" parameterType="com.jp.dataxeed.pm.entity.LocationEntity">
+    UPDATE locations
+    SET name = #{name},
+        updated_at = CURRENT_TIMESTAMP
+    WHERE id = #{id}
+  </update>
+
+  <!-- 論理削除 -->
+  <update id="deleteLocation" parameterType="int">
+    UPDATE locations
+    SET delete_flag = true,
+        updated_at = CURRENT_TIMESTAMP
+    WHERE id = #{id}
+  </update>
+
+  <!-- 検索 -->
+  <select id="searchLocation"
+          parameterType="com.jp.dataxeed.pm.form.location.SearchLocationForm"
+          resultMap="locationResultMap">
+    SELECT id, name, delete_flag, created_at, updated_at
+    FROM locations
+    <where>
+      delete_flag = false
+      <if test="name != null and name != ''">
+        AND name LIKE CONCAT('%', #{name}, '%')
+      </if>
+
+      <!-- 登録日 -->
+      <if test="createdAtFrom != null">
+        AND created_at &gt;= #{createdAtFrom}
+      </if>
+      <if test="createdAtTo != null">
+        AND created_at &lt;= #{createdAtTo}
+      </if>
+
+      <!-- 更新日 -->
+      <if test="updatedAtFrom != null">
+        AND updated_at &gt;= #{updatedAtFrom}
+      </if>
+      <if test="updatedAtTo != null">
+        AND updated_at &lt;= #{updatedAtTo}
+      </if>
+    </where>
+    ORDER BY created_at DESC
+  </select>
+
+</mapper>

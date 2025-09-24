@@ -1,0 +1,152 @@
+/* =========================================
+   Category Form（1画面完結 / Dark × Orange）
+   - ヘッダー高は fragment と揃える
+   - 全体は 1 画面内に収める（スクロールなし）
+   - 入力はコンパクト、ボタンは横並び2分割
+   ========================================= */
+
+:root{
+  --header-h: calc(clamp(56px, 7vw, 80px) + 2px);
+
+  /* 色 */
+  --bg:        #0f0f0f;
+  --panel:     #171717;
+  --muted:     #1e1e1e;
+  --text:      #EEE8E1;
+  --text-weak: #cbb8a5;
+  --border:    rgba(255,255,255,.12);
+
+  --accent:    #ff7b00;
+  --accent-2:  #ff9a2a;
+  --accent-3:  #ffd9b3;
+
+  /* 寸法 */
+  --pad-x: 14px;
+  --pad-b: 12px;
+  --ctl-h:  34px;
+  --fz-xs:  12px;
+  --fz-md:  14px;
+}
+
+/* ベース */
+*{ box-sizing: border-box; }
+html, body{ height:100%; }
+body{
+  background: var(--bg);
+  color: var(--text);
+  margin: 0;
+  overflow: hidden; /* ← 全体スクロール禁止 */
+}
+
+/* 画面高を確保（ヘッダーを差し引き） */
+.form-root{
+  height: calc(100vh - var(--header-h));
+  display: grid;
+  grid-template-rows: auto 1fr;
+  padding: 0 var(--pad-x) var(--pad-b);
+}
+@supports (height: 100dvh){
+  .form-root{ height: calc(100dvh - var(--header-h)); }
+}
+
+/* タイトル */
+.form-title{
+  margin: 10px 0 6px;
+  text-align:center;
+  font-size: clamp(18px, 2.2vw, 24px);
+  font-weight: 800;
+  color: var(--accent-3);
+}
+
+/* カード本体（1画面内中央寄せ） */
+.form-container{
+  display: grid;
+  place-items: center;
+  min-height: 0; /* 重要：子要素へ高さを渡す */
+}
+
+/* カード */
+.category-card{
+  width: min(720px, 96vw);
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 8px 22px rgba(0,0,0,.28);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* フォーム */
+.category-form label{
+  display:flex; flex-direction:column; gap:6px;
+  font-weight:700; color:var(--accent-3); font-size: var(--fz-xs);
+  margin: 0;
+}
+.category-form input[type="text"],
+.category-form select,
+.category-form textarea{
+  appearance: none;
+  background: var(--muted);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  height: var(--ctl-h);
+  font-size: var(--fz-md);
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.category-form textarea{ height: auto; min-height: 72px; resize: vertical; }
+.category-form input:focus,
+.category-form select:focus,
+.category-form textarea:focus{
+  border-color: rgba(255,153,0,0.7);
+  box-shadow: 0 0 0 2px rgba(255,153,0,0.18);
+  background:#212121;
+}
+
+/* ボタン行（2分割） */
+.button-row{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 10px;
+  margin-top: 6px;
+}
+.button-row button,
+.button-row .btn{
+  display:flex; align-items:center; justify-content:center;
+  width:100%; padding:12px 0;
+  border:none; border-radius:10px;
+  font-size:14px; font-weight:800; letter-spacing:.02em;
+  cursor:pointer; text-decoration:none;
+}
+
+/* 主ボタン（登録/更新） */
+.button-row button[type="submit"],
+.btn-primary{
+  background: linear-gradient(135deg, var(--accent), var(--accent-2));
+  color:#0b0b0b;
+  box-shadow: 0 6px 16px rgba(255,123,0,.18);
+}
+.button-row button[type="submit"]:hover,
+.btn-primary:hover{
+  filter:saturate(106%);
+  box-shadow: 0 8px 18px rgba(255,123,0,.28);
+}
+
+/* 戻る */
+.navigable,
+.btn-secondary{
+  background:#2a2a2a; color:#f1dcc9; border:1px solid var(--border);
+}
+.navigable:hover,
+.btn-secondary:hover{
+  background:#303030; border-color: rgba(255,153,0,.45);
+}
+
+/* モバイル：縦並び */
+@media (max-width:560px){
+  .button-row{ grid-template-columns: 1fr; }
+}

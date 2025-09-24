@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+
+<!-- 共通ヘッダー -->
+<div th:fragment="header">
+    <nav class="nav-bar" data-nav>
+        <a th:href="@{/home}" th:classappend="${#strings.startsWith(currentPath, '/home')} ? 'active' : ''"             class="navigable">トップ</a>
+        <a th:href="@{/order}" th:classappend="${#strings.startsWith(currentPath, '/order') 
+                                                and !#strings.startsWith(currentPath, '/order-in') 
+                                                and !#strings.startsWith(currentPath, '/order-out')} ? 'active' : ''"   class="navigable">入出庫検索</a>
+        <a th:href="@{/order-in}" th:classappend="${#strings.startsWith(currentPath, '/order-in')} ? 'active' : ''"     class="navigable">+入庫</a>
+        <a th:href="@{/order-out}" th:classappend="${#strings.startsWith(currentPath, '/order-out')} ? 'active' : ''"   class="navigable">-出庫</a>
+        <a th:href="@{/csv}" th:classappend="${#strings.startsWith(currentPath, '/csv')} ? 'active' : ''"               class="navigable">予定一括登録</a>
+        <a th:href="@{/party}" th:classappend="${#strings.startsWith(currentPath, '/party')} ? 'active' : ''"           class="navigable">企業管理</a>
+        <a th:href="@{/product}" th:classappend="${#strings.startsWith(currentPath, '/product')} ? 'active' : ''"       class="navigable">製品管理</a>
+        <a th:href="@{/category}" th:classappend="${#strings.startsWith(currentPath, '/category')} ? 'active' : ''"     class="navigable">カテゴリ管理</a>
+        <a th:href="@{/location}" th:classappend="${#strings.startsWith(currentPath, '/location')} ? 'active' : ''"     class="navigable">保管場所管理</a>
+        <a th:href="@{/user}" th:classappend="${#strings.startsWith(currentPath, '/user')} ? 'active' : ''"             class="navigable">ユーザー管理</a>
+    </nav>
+</div>
+
+<!-- 共通フッター -->
+<div th:fragment="footer">
+    <footer>
+        <hr>
+        <p>&copy; 2025 製品管理システム</p>
+    </footer>
+</div>
+
+</body>
+</html>

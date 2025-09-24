@@ -1,0 +1,104 @@
+/* ====== nav only scope (他画面干渉なし) ====== */
+
+/* バー本体（data-nav 配下にのみ適用） */
+:where([data-nav].nav-bar) {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  gap: 0;
+
+  background-color: #000;              /* 黒ベース */
+  border-bottom: 2px solid #696969;
+
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+
+  padding: 0;
+  margin: 0;
+}
+
+/* 内部だけ box-sizing 指定（他画面に影響させない） */
+:where([data-nav].nav-bar) * { box-sizing: border-box; }
+
+/* スクロールバー（対応ブラウザのみ） */
+:where([data-nav].nav-bar)::-webkit-scrollbar { height: 6px; }
+:where([data-nav].nav-bar)::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, #ff7b00 0%, #ffb200 100%);
+  border-radius: 999px;
+}
+:where([data-nav].nav-bar)::-webkit-scrollbar-track { background: transparent; }
+
+/* リンク共通 */
+:where([data-nav].nav-bar) a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  height: clamp(56px, 7vw, 80px);
+
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+  letter-spacing: .02em;
+  white-space: nowrap;
+
+  border-right: 1px solid #5f5f5f;
+  padding: 0 14px;
+
+  transition:
+    background-color .2s ease,
+    color .2s ease,
+    transform .02s ease,
+    box-shadow .2s ease;
+
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 最後の仕切り線を消す */
+:where([data-nav].nav-bar) a:last-child { border-right: none; }
+
+/* ホバー */
+:where([data-nav].nav-bar) a:hover {
+  background-color: #ffbb00;
+  color: #000;
+}
+
+/* フォーカス（キーボード操作向け） */
+:where([data-nav].nav-bar) a:focus-visible {
+  outline: 2px solid #ff8f2a;
+  outline-offset: -2px;
+  background: rgba(255, 153, 0, 0.12);
+}
+
+/* アクティブ（現在地）— Thymeleaf の active クラスに対応 */
+:where([data-nav].nav-bar) a.active {
+  background: linear-gradient(180deg, #ffa000, #ff7a00);
+  color: #000;
+  box-shadow: inset 0 -3px 0 rgba(0,0,0,.25);
+}
+
+/* 押下の小さな手応え */
+:where([data-nav].nav-bar) a:active { transform: translateY(1px); }
+
+/* ====== レスポンシブ ====== */
+
+/* タブレット（768–1023px） */
+@media (min-width: 768px) and (max-width: 1023.98px) {
+  :where([data-nav].nav-bar) { flex-wrap: nowrap; scroll-snap-type: x proximity; }
+  :where([data-nav].nav-bar) a {
+    flex: 0 0 auto;                 /* 等幅にしない、縮ませない */
+    min-width: 120px;               /* ある程度のタップ面積 */
+    scroll-snap-align: start;
+  }
+}
+
+/* デスクトップ（≧1024px） */
+@media (min-width: 1024px) {
+  :where([data-nav].nav-bar) { flex-wrap: nowrap; }
+  :where([data-nav].nav-bar) a { flex: 1 1 0; }       /* 均等割り */
+}
+
+/* 追加の見栄え微調整（任意） */
+@media (min-width: 1280px) {
+  :where([data-nav].nav-bar) a { font-size: 15px; }
+}

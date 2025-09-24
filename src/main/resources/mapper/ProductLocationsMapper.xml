@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.jp.dataxeed.pm.mapper.ProductLocationsMapper">
+
+    <!-- 削除 -->
+    <delete id="delete" parameterType="int">
+        DELETE FROM product_locations WHERE product_id = #{ProductId}
+    </delete>
+
+
+    <!-- 追加 -->
+    <insert id="insert">
+        INSERT INTO product_locations (product_id, location_id)
+        VALUES 
+        <foreach collection="locationIds" item="lid" separator=",">
+            (#{productId}, #{lid})
+        </foreach>
+    </insert>
+</mapper>
+
+

@@ -1,0 +1,367 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.jp.dataxeed.pm.mapper.OrderMapper">
+
+  <!-- ===== Entity用 ===== -->
+  <resultMap id="OrderResultMap" type="com.jp.dataxeed.pm.entity.OrderEntity">
+    <id property="id" column="id"/>
+    <result property="orderCode" column="order_code"/>
+    <result property="partyId" column="party_id"/>
+    <result property="deliveryDate" column="delivery_date"/>
+    <result property="trackingNumber" column="tracking_number"/>
+    <result property="adminNote" column="admin_note"/>
+    <result property="warehouseWorkerNote" column="warehouse_worker_note"/>
+    <result property="qualityInspectorNote" column="quality_inspector_note"/>
+    <result property="situation" column="situation"/>
+    <result property="locationId" column="location_id"/>
+    <result property="createdAt" column="created_at"/>
+    <result property="updatedAt" column="updated_at"/>
+  </resultMap>
+
+  <!-- ===== DTO用 ===== -->
+  <resultMap id="OrderWithDetailsResultMap" type="com.jp.dataxeed.pm.dto.OrderWithDetailsDto">
+    <id property="id" column="id"/>
+    <result property="orderCode" column="order_code"/>
+    <result property="partyId" column="party_id"/>
+    <result property="partyCode" column="party_code"/>
+    <result property="partyName" column="party_name"/>
+    <result property="trackingNumber" column="tracking_number"/>
+    <result property="deliveryDate" column="delivery_date"/>
+    <result property="createdAt" column="created_at"/>
+    <result property="updatedAt" column="updated_at"/>
+    <result property="situation" column="situation"/>
+    <result property="locationId" column="location_id"/>
+
+    <result property="adminId" column="admin_id"/>
+    <result property="qualityInspectorId" column="quality_inspector_id"/>
+    <result property="warehouseWorkerId" column="warehouse_worker_id"/>
+
+    <result property="adminName" column="admin_name"/>
+    <result property="qualityInspectorName" column="quality_inspector_name"/>
+    <result property="warehouseWorkerName" column="warehouse_worker_name"/>
+
+    <result property="adminNote" column="admin_note"/>
+    <result property="qualityInspectorNote" column="quality_inspector_note"/>
+    <result property="warehouseWorkerNote" column="warehouse_worker_note"/>
+
+    <collection property="productIds"
+                javaType="java.util.ArrayList"
+                ofType="java.lang.Integer"
+                column="id"
+                select="findProductIdsByOrderId"/>
+
+    <collection property="pictures"
+                ofType="com.jp.dataxeed.pm.dto.PictureDto"
+                column="id"
+                select="findPicturesByOrderId"/>
+  </resultMap>
+
+  
+
+  <!-- ===== 中間テーブル: order_products ===== -->
+  <select id="findProductIdsByOrderId" parameterType="int" resultType="int">
+    SELECT product_id
+    FROM order_products
+    WHERE order_id = #{id}
+  </select>
+
+  <!-- ===== findById ===== -->
+  <select id="findById" parameterType="int" resultMap="OrderResultMap">
+    SELECT *
+    FROM orders
+    WHERE id = #{id}
+  </select>
+
+  <!-- 削除　deleteOrderById -->
+  <delete id="deleteOrderById" parameterType="int">
+    DELETE FROM orders
+    WHERE id = #{id}
+  </delete>
+
+  <delete id="deleteUnfinishedOrders">
+  DELETE FROM orders
+  WHERE order_code LIKE '%DRAFT%'
+     OR order_code LIKE '%PENDING%'
+</delete>
+
+
+
+  <!-- ===== 新規登録（空の注文） ===== -->
+  <insert id="insertEmptyOrder" parameterType="com.jp.dataxeed.pm.entity.OrderEntity"
+        useGeneratedKeys="true" keyProperty="id">
+    INSERT INTO orders (
+      order_code,
+      party_id,
+      tracking_number,
+      delivery_date,
+      admin_note,
+      warehouse_worker_note,
+      quality_inspector_note,
+      admin_id,
+      warehouse_worker_id,
+      quality_inspector_id,
+      situation,
+      location_id
+    ) VALUES (
+      #{orderCode},
+      #{partyId},
+      #{trackingNumber,jdbcType=VARCHAR},
+      #{deliveryDate},
+      #{adminNote,jdbcType=VARCHAR},
+      #{warehouseWorkerNote,jdbcType=VARCHAR},
+      #{qualityInspectorNote,jdbcType=VARCHAR},
+      #{adminId},
+      #{warehouseWorkerId},
+      #{qualityInspectorId},
+      #{situation},
+      #{locationId,jdbcType=INTEGER}
+    )
+  </insert>
+  
+
+  <!-- ===== 画像取得 ===== -->
+  <select id="findPicturesByOrderId" parameterType="int" resultType="com.jp.dataxeed.pm.dto.PictureDto">
+    SELECT p.id,
+           p.file_name AS fileName,
+           p.file_type AS fileType,
+           p.file_size AS fileSize,
+           p.file_path AS filePath
+    FROM pictures p
+    INNER JOIN order_pictures op ON p.id = op.picture_id
+    WHERE op.order_id = #{id}
+  </select>
+
+  <!-- ===== 既存の更新 ===== -->
+  <update id="updateOrderToSave" parameterType="com.jp.dataxeed.pm.entity.OrderEntity">
+    UPDATE orders
+    SET party_id = #{partyId},
+        tracking_number = #{trackingNumber},
+        delivery_date = #{deliveryDate},
+        admin_note = #{adminNote},
+        warehouse_worker_note = #{warehouseWorkerNote},
+        quality_inspector_note = #{qualityInspectorNote},
+        situation = #{situation},
+        location_id = #{locationId},
+        admin_id = #{adminId},
+        warehouse_worker_id = #{warehouseWorkerId},
+        quality_inspector_id = #{qualityInspectorId},
+        <if test="howCsv != null"> how_csv = #{howCsv}, </if>
+        updated_at = CURRENT_TIMESTAMP
+    WHERE id = #{id}
+  </update>
+
+  <insert id="insertOrderToSave"
+        parameterType="com.jp.dataxeed.pm.entity.OrderEntity"
+        useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO orders (
+            /* order_code は後で更新。NOT NULLなら 'IN_PENDING' 等の暫定値を入れる */
+            order_code,
+            party_id,
+            tracking_number,
+            delivery_date,
+            admin_note,
+            warehouse_worker_note,
+            quality_inspector_note,
+            situation,
+            location_id,
+            admin_id,
+            warehouse_worker_id,
+            quality_inspector_id
+            <if test="howCsv != null">, how_csv</if>
+        ) VALUES (
+            #{orderCode},          <!-- ← NOT NULL 対策（DBで許される任意の暫定値） -->
+            #{partyId},
+            #{trackingNumber},
+            #{deliveryDate},
+            #{adminNote},
+            #{warehouseWorkerNote},
+            #{qualityInspectorNote},
+            #{situation},
+            #{locationId},
+            #{adminId},
+            #{warehouseWorkerId},
+            #{qualityInspectorId}
+            <if test="howCsv != null">, #{howCsv}</if>
+        )
+    </insert>
+
+    <!--  order_code だけを更新する軽い UPDATE を追加 -->
+    <update id="updateOrderCodeById">
+        UPDATE orders
+            SET order_code = #{orderCode},
+                updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
+  <!-- ===== 単体取得 ===== -->
+  <select id="getOrderWithDetailsById" parameterType="int" resultMap="OrderWithDetailsResultMap">
+    SELECT
+      o.id                     AS id,
+      o.order_code             AS order_code,
+      p.id                     AS party_id,
+      p.party_code             AS party_code,
+      p.name                   AS party_name,
+      o.tracking_number        AS tracking_number,
+      o.delivery_date          AS delivery_date,
+      o.admin_id               AS admin_id,
+      o.quality_inspector_id   AS quality_inspector_id,
+      o.warehouse_worker_id    AS warehouse_worker_id,
+      au.name                  AS admin_name,
+      qi.name                  AS quality_inspector_name,
+      ww.name                  AS warehouse_worker_name,
+      o.admin_note             AS admin_note,
+      o.warehouse_worker_note  AS warehouse_worker_note,
+      o.quality_inspector_note AS quality_inspector_note,
+      o.situation              AS situation,
+      l.id                     AS location_id,
+      l.name                   AS location_name,
+      o.created_at             AS created_at,
+      o.updated_at             AS updated_at
+    FROM orders o
+    LEFT JOIN parties   p  ON o.party_id    = p.id
+    LEFT JOIN locations l  ON o.location_id = l.id
+    LEFT JOIN users     au ON o.admin_id    = au.id
+    LEFT JOIN users     qi ON o.quality_inspector_id = qi.id
+    LEFT JOIN users     ww ON o.warehouse_worker_id  = ww.id
+    WHERE o.id = #{id}
+  </select>
+
+  <!-- ===== 検索（製品名2枠AND + 画像の有無） ===== -->
+  <select id="searchOrderWithDetailsDto"
+          parameterType="com.jp.dataxeed.pm.form.order.SearchOrderForm"
+          resultMap="OrderWithDetailsResultMap">
+    SELECT
+      o.id                     AS id,
+      o.order_code             AS order_code,
+      p.id                     AS party_id,
+      p.party_code             AS party_code,
+      p.name                   AS party_name,
+      o.tracking_number        AS tracking_number,
+      o.delivery_date          AS delivery_date,
+      o.admin_id               AS admin_id,
+      o.quality_inspector_id   AS quality_inspector_id,
+      o.warehouse_worker_id    AS warehouse_worker_id,
+      au.name                  AS admin_name,
+      qi.name                  AS quality_inspector_name,
+      ww.name                  AS warehouse_worker_name,
+      o.admin_note             AS admin_note,
+      o.warehouse_worker_note  AS warehouse_worker_note,
+      o.quality_inspector_note AS quality_inspector_note,
+      l.id                     AS location_id,
+      l.name                   AS location_name,
+      o.situation              AS situation,
+      o.how_csv                AS how_csv,
+      o.created_at             AS created_at,
+      o.updated_at             AS updated_at
+    FROM orders o
+    LEFT JOIN parties   p  ON o.party_id    = p.id
+    LEFT JOIN locations l  ON o.location_id = l.id
+    LEFT JOIN users     au ON o.admin_id    = au.id
+    LEFT JOIN users     qi ON o.quality_inspector_id = qi.id
+    LEFT JOIN users     ww ON o.warehouse_worker_id  = ww.id
+
+    <where>
+      <if test="id != null">
+        AND o.id = #{id}
+      </if>
+      <if test="orderCode != null and orderCode != ''">
+        AND o.order_code ILIKE '%' || #{orderCode} || '%'
+      </if>
+      <if test="partyCode != null and partyCode != ''">
+        AND p.party_code ILIKE '%' || #{partyCode} || '%'
+      </if>
+      <if test="partyName != null and partyName != ''">
+        AND p.name ILIKE '%' || #{partyName} || '%'
+      </if>
+      <if test="trackingNumber != null and trackingNumber != ''">
+        AND o.tracking_number ILIKE '%' || #{trackingNumber} || '%'
+      </if>
+      <if test="deliveryDate != null">
+        AND o.delivery_date = #{deliveryDate}
+      </if>
+      <if test="adminName != null and adminName != ''">
+        AND au.name ILIKE '%' || #{adminName} || '%'
+      </if>
+      <if test="qualityInspectorName != null and qualityInspectorName != ''">
+        AND qi.name ILIKE '%' || #{qualityInspectorName} || '%'
+      </if>
+      <if test="warehouseWorkerName != null and warehouseWorkerName != ''">
+        AND ww.name ILIKE '%' || #{warehouseWorkerName} || '%'
+      </if>
+      <if test="adminNote != null and adminNote != ''">
+        AND o.admin_note ILIKE '%' || #{adminNote} || '%'
+      </if>
+      <if test="qualityInspectorNote != null and qualityInspectorNote != ''">
+        AND o.quality_inspector_note ILIKE '%' || #{qualityInspectorNote} || '%'
+      </if>
+      <if test="warehouseWorkerNote != null and warehouseWorkerNote != ''">
+        AND o.warehouse_worker_note ILIKE '%' || #{warehouseWorkerNote} || '%'
+      </if>
+      <if test="locationName != null and locationName != ''">
+        AND l.name ILIKE '%' || #{locationName} || '%'
+      </if>
+      <if test="situation != null and situation != ''">
+        AND o.situation = #{situation}
+      </if>
+      <if test="howCsv != null and howCsv != ''">
+        AND o.how_csv = #{howCsv}
+      </if>
+
+      <!-- 製品名AND -->
+      <if test="productName1 != null and productName1 != ''">
+        AND EXISTS (
+          SELECT 1
+          FROM order_products op1
+          JOIN products pro1 ON pro1.id = op1.product_id
+          WHERE op1.order_id = o.id
+            AND pro1.name ILIKE '%' || #{productName1} || '%'
+        )
+      </if>
+      <if test="productName2 != null and productName2 != ''">
+        AND EXISTS (
+          SELECT 1
+          FROM order_products op2
+          JOIN products pro2 ON pro2.id = op2.product_id
+          WHERE op2.order_id = o.id
+            AND pro2.name ILIKE '%' || #{productName2} || '%'
+        )
+      </if>
+
+      <!-- 画像の有無 -->
+      <if test="hasImage != null">
+        <choose>
+          <when test="hasImage == true">
+            AND EXISTS (
+              SELECT 1 FROM order_pictures oi WHERE oi.order_id = o.id
+            )
+          </when>
+          <otherwise>
+            AND NOT EXISTS (
+              SELECT 1 FROM order_pictures oi WHERE oi.order_id = o.id
+            )
+          </otherwise>
+        </choose>
+      </if>
+
+      <!-- 日付範囲 -->
+      <if test="createdAtFrom != null">
+        AND o.created_at::date &gt;= #{createdAtFrom}
+      </if>
+      <if test="createdAtTo != null">
+        AND o.created_at::date &lt;= #{createdAtTo}
+      </if>
+      <if test="updatedAtFrom != null">
+        AND o.updated_at::date &gt;= #{updatedAtFrom}
+      </if>
+      <if test="updatedAtTo != null">
+        AND o.updated_at::date &lt;= #{updatedAtTo}
+      </if>
+    </where>
+
+    ORDER BY o.id DESC
+  </select>
+
+</mapper>

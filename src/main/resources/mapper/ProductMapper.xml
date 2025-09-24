@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.jp.dataxeed.pm.mapper.ProductMapper">
+
+  <!-- ProductEntity（必要なら維持） -->
+  <resultMap id="ProductResultMap" type="com.jp.dataxeed.pm.entity.ProductEntity">
+    <id     property="id"          column="id"/>
+    <result property="productCode" column="product_code"/>
+    <result property="name"        column="name"/>
+    <result property="deleteFlag"  column="delete_flag"/>
+    <result property="createdAt"   column="created_at"/>
+    <result property="updatedAt"   column="updated_at"/>
+  </resultMap>
+
+  <!-- ProductWithDetailsDto（categories/locations をネストで注入） -->
+  <resultMap id="ProductWithDetailsResultMap" type="com.jp.dataxeed.pm.dto.ProductWithDetailsDto">
+    <id     property="id"            column="id"/>
+    <result property="productCode"   column="product_code"/>
+    <result property="name"          column="name"/>
+    <result property="createdAt"     column="created_at"/>
+    <result property="updatedAt"     column="updated_at"/>
+    <!-- 在庫合計 -->
+    <result property="totalQuantity" column="total_quantity"/>
+
+    <collection property="categories"
+                ofType="com.jp.dataxeed.pm.dto.CategoryDto"
+                select="findCategoriesByProductId"
+                column="id"/>
+    <collection property="locations"
+                ofType="com.jp.dataxeed.pm.dto.LocationDto"
+                select="findLocationsByProductId"
+                column="id"/>
+  </resultMap>
+
+  <!-- CUD -->
+  <insert id="insertToSave" parameterType="com.jp.dataxeed.pm.entity.ProductEntity"
+          useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+    INSERT INTO products (product_code, name, delete_flag, created_at, updated_at)
+    VALUES (#{productCode}, #{name}, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+  </insert>
+
+  <update id="updateToSave" parameterType="com.jp.dataxeed.pm.entity.ProductEntity">
+    UPDATE products
+       SET product_code = #{productCode},
+           name        = #{name},
+           updated_at  = CURRENT_TIMESTAMP
+     WHERE id = #{id}
+  </update>
+
+  <update id="deleteProduct" parameterType="int">
+    UPDATE products
+       SET delete_flag = true,
+           updated_at  = CURRENT_TIMESTAMP
+     WHERE id = #{id}
+  </update>
+
+  <!-- 一覧 -->
+  <select id="findAllWithDetails" resultMap="ProductWithDetailsResultMap">
+    SELECT
+      p.id,
+      p.product_code,
+      p.name,
+      p.created_at,
+      p.updated_at,
+      COALESCE(s.quantity, 0) AS total_quantity
+    FROM products p
+    LEFT JOIN stock s ON s.product_id = p.id
+    WHERE p.delete_flag = false
+    ORDER BY p.id
+  </select>
+
+  <!-- 単体 -->
+  <select id="findByIdWithDetails" parameterType="int" resultMap="ProductWithDetailsResultMap">
+    SELECT
+      p.id,
+      p.product_code,
+      p.name,
+      p.created_at,
+      p.updated_at,
+      COALESCE(s.quantity, 0) AS total_quantity
+    FROM products p
+    LEFT JOIN stock s ON s.product_id = p.id
+    WHERE p.id = #{id}
+  </select>
+
+  <!-- 複数ID（IN句） -->
+  <select id="findByIdsWithDetails" parameterType="list" resultMap="ProductWithDetailsResultMap">
+    SELECT
+      p.id,
+      p.product_code,
+      p.name,
+      p.created_at,
+      p.updated_at,
+      COALESCE(s.quantity, 0) AS total_quantity
+    FROM products p
+    LEFT JOIN stock s ON s.product_id = p.id
+    WHERE p.delete_flag = false
+      AND p.id IN
+      <foreach collection="list" item="id" open="(" separator="," close=")">
+        #{id}
+      </foreach>
+    ORDER BY p.id
+  </select>
+
+  <!-- 検索 -->
+  <select id="searchWithDetails"
+          parameterType="com.jp.dataxeed.pm.form.product.SearchProductForm"
+          resultMap="ProductWithDetailsResultMap">
+
+    <bind name="catSize" value="categoryIds != null ? categoryIds.size() : 0"/>
+    <bind name="locSize" value="locationIds != null ? locationIds.size() : 0"/>
+
+    SELECT
+      p.id,
+      p.product_code,
+      p.name,
+      p.created_at,
+      p.updated_at,
+      COALESCE(s.quantity, 0) AS total_quantity
+    FROM products p
+    LEFT JOIN stock s ON s.product_id = p.id
+    <where>
+      p.delete_flag = false
+
+      <if test="productCode != null and productCode != ''">
+        AND p.product_code ILIKE '%' || #{productCode} || '%'
+      </if>
+      <if test="name != null and name != ''">
+        AND p.name ILIKE '%' || #{name} || '%'
+      </if>
+
+      <!-- カテゴリ（全一致） -->
+      <if test="categoryIds != null and categoryIds.size() &gt; 0">
+        AND p.id IN (
+          SELECT pc_f.product_id
+            FROM product_categories pc_f
+           WHERE pc_f.category_id IN
+             <foreach collection="categoryIds" item="cid" open="(" separator="," close=")">
+               #{cid}
+             </foreach>
+           GROUP BY pc_f.product_id
+          HAVING COUNT(DISTINCT pc_f.category_id) = #{catSize}
+        )
+      </if>
+
+      <!-- ロケーション（全一致） -->
+      <if test="locationIds != null and locationIds.size() &gt; 0">
+        AND p.id IN (
+          SELECT pl_f.product_id
+            FROM product_locations pl_f
+           WHERE pl_f.location_id IN
+             <foreach collection="locationIds" item="lid" open="(" separator="," close=")">
+               #{lid}
+             </foreach>
+           GROUP BY pl_f.product_id
+          HAVING COUNT(DISTINCT pl_f.location_id) = #{locSize}
+        )
+      </if>
+
+      <!-- 日付 -->
+      <if test="createdAtFrom != null">
+        AND p.created_at::date &gt;= #{createdAtFrom}
+      </if>
+      <if test="createdAtTo != null">
+        AND p.created_at::date &lt;= #{createdAtTo}
+      </if>
+      <if test="updatedAtFrom != null">
+        AND p.updated_at::date &gt;= #{updatedAtFrom}
+      </if>
+      <if test="updatedAtTo != null">
+        AND p.updated_at::date &lt;= #{updatedAtTo}
+      </if>
+
+      <!-- 在庫合計（範囲） -->
+      <if test="totalQuantityFrom != null">
+        AND COALESCE(s.quantity, 0) <![CDATA[>=]]> #{totalQuantityFrom}
+      </if>
+      <if test="totalQuantityTo != null">
+        AND COALESCE(s.quantity, 0) <![CDATA[<=]]> #{totalQuantityTo}
+      </if>
+    </where>
+    ORDER BY p.id
+  </select>
+
+  <!-- ネストselect：明細 -->
+  <select id="findCategoriesByProductId" parameterType="int"
+          resultType="com.jp.dataxeed.pm.dto.CategoryDto">
+    SELECT c.id, c.name
+      FROM product_categories pc
+      JOIN categories c ON c.id = pc.category_id
+     WHERE pc.product_id = #{id}
+     ORDER BY c.id
+  </select>
+
+  <select id="findLocationsByProductId" parameterType="int"
+          resultType="com.jp.dataxeed.pm.dto.LocationDto">
+    SELECT l.id, l.name
+      FROM product_locations pl
+      JOIN locations l ON l.id = pl.location_id
+     WHERE pl.product_id = #{id}
+     ORDER BY l.id
+  </select>
+
+
+  
+
+<!-- 変更（null を許容） -->
+  <select id="findIdByProductCode" parameterType="string" resultType="java.lang.Integer">
+    SELECT id
+    FROM products
+    WHERE product_code = #{productCode}
+      AND delete_flag = FALSE
+    LIMIT 1
+  </select>
+
+
+</mapper>

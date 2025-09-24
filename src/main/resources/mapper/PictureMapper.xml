@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.jp.dataxeed.pm.mapper.PictureMapper">
+
+  <resultMap id="PictureDtoMap" type="com.jp.dataxeed.pm.dto.PictureDto">
+    <id     property="id"        column="id"/>
+    <result property="fileName"  column="file_name"/>
+    <result property="fileType"  column="file_type"/>
+    <result property="fileSize"  column="file_size"/>
+    <result property="filePath"  column="file_path"/>
+  </resultMap>
+
+  <insert id="insertPicture"
+          parameterType="com.jp.dataxeed.pm.dto.PictureDto"
+          useGeneratedKeys="true"
+          keyProperty="id">
+    INSERT INTO pictures (file_name, file_type, file_size, file_path)
+    VALUES (#{fileName}, #{fileType}, #{fileSize}, #{filePath})
+  </insert>
+
+  <select id="findPicturesByOrderId"
+          parameterType="int"
+          resultMap="PictureDtoMap">
+    SELECT p.id, p.file_name, p.file_type, p.file_size, p.file_path
+    FROM pictures p
+    INNER JOIN order_pictures op ON p.id = op.picture_id
+    WHERE op.order_id = #{_parameter}
+    ORDER BY p.id DESC
+  </select>
+
+  <!-- ★ 追加：単体取得 -->
+  <select id="findById" parameterType="int" resultMap="PictureDtoMap">
+    SELECT id, file_name, file_type, file_size, file_path
+    FROM pictures
+    WHERE id = #{_parameter}
+  </select>
+
+  <!-- ★ 追加：削除 -->
+  <delete id="deleteById" parameterType="int">
+    DELETE FROM pictures WHERE id = #{_parameter}
+  </delete>
+
+  <!-- ★ 追加：参照カウント（注文+製品） -->
+  <select id="countUsage" parameterType="int" resultType="int">
+    SELECT
+      COALESCE((SELECT COUNT(*) FROM order_pictures   WHERE picture_id = #{_parameter}), 0)
+      +
+      COALESCE((SELECT COUNT(*) FROM product_pictures WHERE picture_id = #{_parameter}), 0)
+  </select>
+
+</mapper>

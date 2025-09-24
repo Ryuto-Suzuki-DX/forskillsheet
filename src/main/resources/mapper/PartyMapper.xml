@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.jp.dataxeed.pm.mapper.PartyMapper">
+  <resultMap id="partyResultMap" type="com.jp.dataxeed.pm.entity.PartyEntity">
+    <id property="id" column="id" />
+    <result property="partyCode" column="party_code" />
+    <result property="name" column="name" />
+    <result property="address" column="address" />
+    <result property="detail" column="detail" />
+    <result property="attention" column="attention" />
+    <result property="createdAt" column="created_at" />
+    <result property="updatedAt" column="updated_at" />
+  </resultMap>
+
+  <!-- 全てのPartyEntityを取得 -->
+  <select id="findAll" resultMap="partyResultMap">
+    SELECT * FROM parties
+     WHERE delete_flag = false
+     ORDER BY created_at DESC
+  </select>
+
+  <!-- id → partyEntity -->
+  <select id="findById" parameterType="int" resultMap="partyResultMap">
+    SELECT * FROM parties WHERE id = #{id}
+  </select>
+
+  <!-- insert 保存用 -->
+  <insert id="insertToSave" parameterType="com.jp.dataxeed.pm.entity.PartyEntity" useGeneratedKeys="true" keyProperty="id">
+    INSERT INTO parties (party_code, name, address, detail, attention, delete_flag, created_at, updated_at)
+    VALUES (#{partyCode}, #{name}, #{address}, #{detail}, #{attention}, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+  </insert>
+
+  <!-- update 保存用 -->
+  <update id="updateToSave" parameterType="com.jp.dataxeed.pm.entity.PartyEntity">
+    UPDATE parties
+       SET party_code = #{partyCode},
+           name       = #{name},
+           address    = #{address},
+           detail     = #{detail},
+           attention  = #{attention},
+           updated_at = CURRENT_TIMESTAMP
+     WHERE id = #{id}
+  </update>
+
+  <!-- delete 理論削除 -->
+  <update id="deleteParty" parameterType="int">
+    UPDATE parties
+       SET delete_flag = true
+     WHERE id = #{id}
+  </update>
+
+  <!-- 検索 -->
+  <select id="searchParty" parameterType="com.jp.dataxeed.pm.form.party.SearchPartyForm" resultMap="partyResultMap">
+    SELECT * FROM parties
+     WHERE delete_flag = false
+    <if test="partyCode != null and partyCode != ''">
+      AND party_code LIKE CONCAT('%', #{partyCode}, '%')
+    </if>
+    <if test="name != null and name != ''">
+      AND name LIKE CONCAT('%', #{name}, '%')
+    </if>
+    <if test="address != null and address != ''">
+      AND address LIKE CONCAT('%', #{address}, '%')
+    </if>
+    <if test="detail != null and detail != ''">
+      AND detail LIKE CONCAT('%', #{detail}, '%')
+    </if>
+    <if test="attention != null and attention != ''">
+      AND attention LIKE CONCAT('%', #{attention}, '%')
+    </if>
+
+    <!-- 登録日 -->
+    <if test="createdAtFrom != null">
+      AND created_at &gt;= #{createdAtFrom}
+    </if>
+    <if test="createdAtTo != null">
+      AND created_at &lt;= #{createdAtTo}
+    </if>
+
+    <!-- 更新日 -->
+    <if test="updatedAtFrom != null">
+      AND updated_at &gt;= #{updatedAtFrom}
+    </if>
+    <if test="updatedAtTo != null">
+      AND updated_at &lt;= #{updatedAtTo}
+    </if>
+    ORDER BY created_at DESC
+  </select>
+
+  <!-- === 追加：コード → ID（完全一致・未削除） === -->
+  <select id="selectIdByCode" parameterType="string" resultType="int">
+    SELECT id
+      FROM parties
+     WHERE party_code = #{code}
+       AND delete_flag = FALSE
+     LIMIT 1
+  </select>
+
+  <!-- === 追加：名称 → ID（完全一致・未削除） === -->
+  <select id="selectIdByName" parameterType="string" resultType="int">
+    SELECT id
+      FROM parties
+     WHERE name = #{name}   <!-- ★ 重要: 'party_name' ではなく 'name' -->
+       AND delete_flag = FALSE
+     LIMIT 1
+  </select>
+</mapper>

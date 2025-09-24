@@ -1,0 +1,60 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.2.5'
+    id 'io.spring.dependency-management' version '1.1.4'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '17'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    // Spring Web
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+
+    // Thymeleaf
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    implementation 'org.thymeleaf.extras:thymeleaf-extras-springsecurity6:3.1.1.RELEASE'
+
+    // Spring Security
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+
+    // JPA (for @Entity, @Id, @Column, etc.)
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+    // Validation (for @NotNull, @Size, etc.)
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    // ▼ これで jakarta.validation.* が確実に解決されます（バージョンは Spring Boot のBOMに従う）
+    implementation 'jakarta.validation:jakarta.validation-api'
+    implementation 'org.hibernate.validator:hibernate-validator'
+
+    // MyBatis
+    implementation 'org.mybatis.spring.boot:mybatis-spring-boot-starter:3.0.3'
+
+    // PostgreSQL JDBC Driver
+    implementation 'org.postgresql:postgresql'
+
+    // Lombok
+    implementation 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+    testAnnotationProcessor 'org.projectlombok:lombok'
+
+    // 開発用 (Hot reload など)
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+    // テスト
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+    //CSV用
+    implementation 'org.apache.commons:commons-csv:1.11.0'
+}
+
+tasks.register('runPasswordGenerator', JavaExec) {
+    classpath = sourceSets.main.runtimeClasspath
+    mainClass.set('com.jp.dataxeed.pm.util.PasswordHashGenerator')
+}
+// gradlew runPasswordGenerator → パスワードハッシュを生成するためのタスク

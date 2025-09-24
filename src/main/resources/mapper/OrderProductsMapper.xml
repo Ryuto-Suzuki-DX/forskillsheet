@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.jp.dataxeed.pm.mapper.OrderProductsMapper">
+
+  <select id="findRefsByOrderId" parameterType="int"
+          resultType="com.jp.dataxeed.pm.dto.OrderProductRef">
+    SELECT product_id AS productId,
+           quantity   AS quantity
+      FROM order_products
+     WHERE order_id = #{orderId}
+     ORDER BY id
+  </select>
+
+  <delete id="deleteByOrderId" parameterType="int">
+    DELETE FROM order_products WHERE order_id = #{orderId}
+  </delete>
+
+  <insert id="insertBatch">
+    INSERT INTO order_products (order_id, product_id, quantity)
+    VALUES
+    <foreach collection="items" item="it" separator=",">
+      (#{orderId}, #{it.productId}, #{it.quantity})
+    </foreach>
+  </insert>
+
+  <select id="countByOrderId" parameterType="int" resultType="int">
+    SELECT COUNT(*) FROM order_products WHERE order_id = #{orderId}
+  </select>
+
+</mapper>

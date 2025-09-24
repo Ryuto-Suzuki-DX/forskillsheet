@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+  <meta charset="UTF-8">
+  <meta id="loggedInUserId" th:content="${loginUserId}">
+  <title>入出庫編集</title>
+  <link rel="stylesheet" th:href="@{/css/fragment-style.css}">
+  <link rel="stylesheet" th:href="@{/css/order/edit.css}">
+  <meta name="_csrf" th:content="${_csrf.token}">
+  <meta name="_csrf_header" th:content="${_csrf.headerName}">
+  <script th:src="@{/js/order/edit.js}" defer></script>
+</head>
+
+<script th:inline="javascript">
+  const partyList = /*[[${partyList}]]*/ [];
+</script>
+
+<body>
+  <!-- 共通ヘッダー（nav 高さは CSS で連動考慮） -->
+  <div th:replace="~{fragment/fragment :: header}"></div>
+
+  <!-- 画面本体（ヘッダー差し引き済み） -->
+  <div class="edit-root">
+    <h1 class="page-title">入出庫編集</h1>
+
+    <form class="order-form"
+          th:action="@{/order/save}"
+          method="post"
+          th:object="${orderWithDetailsDto}"
+          th:with="
+            isAdmin=${#authorization.expression('hasRole(''ADMIN'')')},
+            isGeneral=${#authorization.expression('hasRole(''GENERAL'')')},
+            isCompleted=(*{situation} == '完了')"
+          th:attr="data-is-general=${isGeneral},data-is-completed=${isCompleted}">
+
+      <input type="hidden" th:field="*{id}">
+
+      <div class="screen"
+           th:classappend="${isGeneral or isCompleted} ? ' no-bottom' : ''">
+
+        <!-- ========== 上段：左=入力 / 右=登録済み製品 ========== -->
+        <section class="block block-top">
+          <!-- 左：入力 -->
+          <div class="block-left">
+            <!-- 基本情報 -->
+            <div class="form-grid">
+              <label>入出庫コード:
+                <span th:text="*{orderCode}"></span>
+                <input type="hidden" th:field="*{orderCode}">
+              </label>
+
+              <label>企業コード：
+                <input type="text" id="partyCode" th:field="*{partyCode}" th:disabled="${isGeneral}" required>
+                <input type="hidden" th:if="${isGeneral}" th:field="*{partyCode}">
+              </label>
+
+              <label>企業名：
+                <input type="text" id="partyName" th:field="*{partyName}" th:disabled="${isGeneral}" required>
+                <input type="hidden" th:if="${isGeneral}" th:field="*{partyName}">
+                <input type="hidden" th:field="*{partyId}">
+              </label>
+
+              <label>伝票番号:
+                <input type="text" th:field="*{trackingNumber}" th:disabled="${isGeneral}">
+                <input type="hidden" th:if="${isGeneral}" th:field="*{trackingNumber}">
+              </label>
+
+              <label>納品/配送日
+                <input type="date" th:field="*{deliveryDate}" th:disabled="${isGeneral}" id="deliveryDateInput" required>
+                <input type="hidden" th:if="${isGeneral}" th:field="*{deliveryDate}" id="deliveryDateHidden">
+              </label>
+
+              <label>状況:
+                <select th:field="*{situation}">
+                  <option value="">-- 未選択 --</option>
+                  <option value="配送待ち">配送待ち</option>
+                  <option value="作業中">作業中</option>
+                  <option value="検品中">検品中</option>
+                  <option value="検品待ち">検品待ち</option>
+                  <option value="保留中">保留中</option>
+                  <option value="完了">完了</option>
+                  <option value="キャンセル">キャンセル</option>
+                  <option value="その他">その他</option>
+                </select>
+              </label>
+            </div>
+
+            <!-- 担当者 -->
+            <div class="form-grid">
+              <label>管理者:
+                <select th:field="*{adminId}" th:disabled="${isGeneral}">
+                  <option th:each="admin : ${adminList}"
+                          th:value="${admin.id}"
+                          th:text="${admin.name}"></option>
+                </select>
+                <input type="hidden" th:if="${isGeneral}" th:field="*{adminId}">
+              </label>
+
+              <label>作業者:
+                <select th:field="*{warehouseWorkerId}">
+                  <option value="">-- 未選択 --</option>
+                  <option th:each="worker : ${warehouseWorkerList}"
+                          th:value="${worker.id}"
+                          th:text="${worker.name}"></option>
+                </select>
+              </label>
+
+              <label>検品者:
+                <select th:field="*{qualityInspectorId}">
+                  <option value="">-- 未選択 --</option>
+                  <option th:each="inspector : ${qualityInspectorList}"
+                          th:value="${inspector.id}"
+                          th:text="${inspector.name}"></option>
+                </select>
+              </label>
+
+              <label>保管場所：
+                <select th:field="*{locationId}" th:disabled="${isGeneral}">
+                  <option value="">-- 未選択 --</option>
+                  <option th:each="loc : ${locationList}" th:value="${loc.id}" th:text="${loc.name}"></option>
+                </select>
+                <input type="hidden" th:if="${isGeneral}" th:field="*{locationId}">
+              </label>
+            </div>
+
+            <!-- 備考 -->
+            <div class="form-grid">
+              <label>管理者メモ:
+                <textarea th:field="*{adminNote}" th:readonly="${isGeneral}"></textarea>
+              </label>
+              <label>検品者メモ:
+                <textarea th:field="*{qualityInspectorNote}"></textarea>
+              </label>
+              <label>作業者メモ:
+                <textarea th:field="*{warehouseWorkerNote}"></textarea>
+              </label>
+
+              <!-- 添付画像（ADMINのみ） -->
+              <button type="button" id="openOrderImageModal" class="img-btn"
+                      sec:authorize="hasRole('ADMIN')">添付画像</button>
+            </div>
+
+            <!-- ボタン -->
+            <div class="button-row">
+              <button type="submit" class="btn btn-primary">保存</button>
+              <a th:href="@{/order/search}" class="btn btn-secondary">戻る</a>
+            </div>
+          </div>
+
+          <!-- 右：登録済み製品（内部スクロール） -->
+          <aside class="block-right">
+            <div class="product-section">
+              <div class="section-titlebar"><h2>登録済み製品</h2></div>
+              <div class="scrollable-table fill-scroll">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>製品コード</th>
+                      <th>製品名</th>
+                      <th>カテゴリ</th>
+                      <th>管理場所</th>
+                      <th>数量</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody id="selectedProducts">
+                    <tr th:each="p, iterStat : *{productWithDetailsDtos}" th:attr="data-id=${p.id}">
+                      <td>
+                        <span th:text="${p.productCode}"></span>
+                        <input type="hidden" th:field="*{productWithDetailsDtos[__${iterStat.index}__].id}" />
+                        <input type="hidden" th:field="*{productWithDetailsDtos[__${iterStat.index}__].productCode}" />
+                      </td>
+                      <td>
+                        <span th:text="${p.name}"></span>
+                        <input type="hidden" th:field="*{productWithDetailsDtos[__${iterStat.index}__].name}" />
+                      </td>
+                      <td>
+                        <span th:if="${#lists.isEmpty(p.categories)}">-</span>
+                        <span th:unless="${#lists.isEmpty(p.categories)}" th:remove="tag">
+                          <span th:each="c, st : ${p.categories}">
+                            <span th:text="${c.name}"></span><span th:if="${!st.last}">, </span>
+                          </span>
+                        </span>
+                      </td>
+                      <td>
+                        <span th:if="${#lists.isEmpty(p.locations)}">-</span>
+                        <span th:unless="${#lists.isEmpty(p.locations)}" th:remove="tag">
+                          <span th:each="l, st : ${p.locations}">
+                            <span th:text="${l.name}"></span><span th:if="${!st.last}">, </span>
+                          </span>
+                        </span>
+                      </td>
+                      <td>
+                        <input type="number"
+                               th:field="*{productWithDetailsDtos[__${iterStat.index}__].quantity}"
+                               min="1" required
+                               th:readonly="${isGeneral}" />
+                      </td>
+                      <td>
+                        <button type="button" class="remove-btn" th:if="${!isGeneral}">削除</button>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </aside>
+        </section>
+
+        <!-- ========== 下段：左=製品検索 / 右=検索結果（ADMINのみ） ========== -->
+        <section class="block block-bottom" sec:authorize="hasRole('ADMIN')">
+          <div class="block-left">
+            <div class="product-section">
+              <h3>製品検索</h3>
+              <div class="search-form form-grid">
+                <input type="text" id="searchKeyword" placeholder="製品名を入力">
+                <select id="searchCategory">
+                  <option value="">カテゴリを選択</option>
+                  <option th:each="cat : ${categoryList}" th:value="${cat.id}" th:text="${cat.name}"></option>
+                </select>
+                <select id="searchLocation">
+                  <option value="">管理場所を選択</option>
+                  <option th:each="loc : ${locationList}" th:value="${loc.id}" th:text="${loc.name}"></option>
+                </select>
+                <button type="button" id="searchProductBtn" class="img-btn">検索</button>
+              </div>
+            </div>
+          </div>
+
+          <aside class="block-right">
+            <div class="product-section">
+              <h3>検索結果</h3>
+              <div class="scrollable-table fill-scroll">
+                <table id="searchResultsTable">
+                  <thead>
+                    <tr>
+                      <th>製品コード</th>
+                      <th>製品名</th>
+                      <th>カテゴリ</th>
+                      <th>管理場所</th>
+                      <th>在庫数</th>
+                      <th></th>
+                    </tr>
+                  </thead>
+                  <tbody><!-- JS で描画 --></tbody>
+                </table>
+              </div>
+            </div>
+          </aside>
+        </section>
+      </div>
+    </form>
+  </div>
+
+  <!-- ===== 画像モーダル ===== -->
+  <div id="orderImageModal" class="image-modal" aria-hidden="true" sec:authorize="hasRole('ADMIN')">
+    <div class="image-modal__backdrop"></div>
+    <div class="image-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="orderImageModalTitle">
+      <div class="image-modal__header">
+        <h3 id="orderImageModalTitle">注文画像</h3>
+        <button type="button" class="image-modal__close" aria-label="閉じる">&times;</button>
+      </div>
+
+      <div class="image-modal__uploader">
+        <input type="file" id="op-file" accept="image/*" multiple>
+        <button type="button" id="op-upload" class="img-btn">アップロード</button>
+        <small>複数選択可（PNG/JPG/WebPなど）</small>
+      </div>
+
+      <div class="image-modal__list">
+        <div class="scrollable-table fill-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:120px;">サムネイル</th>
+                <th>URL</th>
+                <th style="width:72px;"></th>
+              </tr>
+            </thead>
+            <tbody id="op-list"><!-- JSで埋める --></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="image-modal__footer">
+        <button type="button" class="img-btn image-modal__close">閉じる</button>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

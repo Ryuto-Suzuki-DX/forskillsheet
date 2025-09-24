@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.jp.dataxeed.pm.mapper.StockMapper">
+
+
+
+  <!-- 加算（IN） -->
+  <insert id="upsertAdd" parameterType="com.jp.dataxeed.pm.dto.StockUpdateParam">
+    INSERT INTO stock (product_id, quantity, created_at, updated_at)
+    VALUES (#{productId}, #{delta}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    ON CONFLICT (product_id)
+    DO UPDATE SET
+      quantity   = stock.quantity + #{delta},
+      updated_at = CURRENT_TIMESTAMP
+  </insert>
+
+  <!-- 減算（OUT） ※新規行は0から開始し、UPDATE側で param を減算する -->
+  <insert id="upsertSub" parameterType="com.jp.dataxeed.pm.dto.StockUpdateParam">
+    INSERT INTO stock (product_id, quantity, created_at, updated_at)
+    VALUES (#{productId}, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    ON CONFLICT (product_id)
+    DO UPDATE SET
+      quantity   = stock.quantity - #{delta},
+      updated_at = CURRENT_TIMESTAMP
+  </insert>
+
+  <!-- 在庫割れチェック用の悲観ロック取得 -->
+  <select id="selectForUpdate" parameterType="int" resultType="long">
+    SELECT quantity
+    FROM stock
+    WHERE product_id = #{productId}
+    FOR UPDATE
+  </select>
+
+</mapper>

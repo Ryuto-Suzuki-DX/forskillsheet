@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.jp.dataxeed.pm.mapper.OrderPicturesMapper">
+
+  <insert id="insertOrderPicture">
+    INSERT INTO order_pictures (order_id, picture_id)
+    VALUES (#{orderId}, #{pictureId})
+    ON CONFLICT (order_id, picture_id) DO NOTHING
+  </insert>
+
+  <delete id="deleteByOrderId" parameterType="int">
+    DELETE FROM order_pictures WHERE order_id = #{_parameter}
+  </delete>
+
+  <delete id="deleteByPictureId" parameterType="int">
+    DELETE FROM order_pictures WHERE picture_id = #{_parameter}
+  </delete>
+
+  <!-- ★ 追加：この注文とこの画像のリンクだけ削除 -->
+  <delete id="deleteLink">
+    DELETE FROM order_pictures WHERE order_id = #{orderId} AND picture_id = #{pictureId}
+  </delete>
+
+</mapper>

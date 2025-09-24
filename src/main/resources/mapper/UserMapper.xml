@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.jp.dataxeed.pm.mapper.UserMapper">
+        <resultMap id="UserResultMap" type="com.jp.dataxeed.pm.entity.UserEntity">
+            <id property="id" column="id"/>
+            <result property="username" column="username"/>
+            <result property="password" column="password"/>
+            <result property="role" column="role"/>
+            <result property="deleteFlag" column="delete_flag"/>
+            <result property="createdAt" column="created_at"/>
+            <result property="updatedAt" column="updated_at"/>
+        </resultMap>
+
+    <!-- 全取得(理論削除除く) → List<userForm> -->
+    <select id="findAll" resultMap="UserResultMap">
+        SELECT * FROM users WHERE delete_flag = false
+    </select>
+
+    <!-- ユーザー名→UserEntity-->
+    <select id="findByUsername" resultMap="UserResultMap">
+        SELECT * FROM users WHERE username = #{username} AND delete_flag = false
+    </select>
+
+    <!-- id → UserEntity -->
+    <select id="findById" parameterType="int" resultMap="UserResultMap">
+        SELECT * FROM users WHERE id = #{id} AND delete_flag = FALSE
+    </select>
+
+    <!-- Entity →　insert-->
+    <insert id="insert" parameterType="com.jp.dataxeed.pm.entity.UserEntity" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO users (username, password, name, role, delete_flag, created_at, updated_at)
+        VALUES (#{username}, #{password}, #{name}, #{role}, false, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    </insert>
+    
+    
+    <!--Entity → update passwordの有無で処理を切り分け-->
+    <update id="update" parameterType="com.jp.dataxeed.pm.entity.UserEntity">
+        UPDATE users SET username = #{username},
+                         name = #{name},
+                         role = #{role},
+                         updated_at = CURRENT_TIMESTAMP
+                         <if test="password != null and password != ''">
+                            , password = #{password}
+                         </if>
+        WHERE id = #{id}
+    </update>
+
+
+    <!--理論削除-->
+    <update id="deleteLogical" parameterType="int">
+        UPDATE users SET delete_flag = true WHERE id = #{id}
+    </update>
+
+
+    <!-- 検索用（理論削除除く） -->
+    <select id="searchUsers" parameterType="com.jp.dataxeed.pm.form.user.SearchUserForm" resultMap="UserResultMap">
+        SELECT * FROM users WHERE delete_flag = false
+            <if test="id != null">
+                AND id = #{id}
+            </if>
+            <if test="username != null and username != ''">
+                AND username LIKE CONCAT('%', #{username}, '%')
+            </if>
+            <if test="name != null and name != ''">
+                AND name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="role != null and role != ''">
+                AND role = #{role}
+            </if>
+            
+            <!--登録日-->
+            <if test="createdAtFrom != null">
+                AND created_at &gt;= #{createdAtFrom}
+            </if>
+            <if test="createdAtTo != null">
+                AND created_at &lt;= #{createdAtTo}
+            </if>
+
+            <!--更新日-->
+            <if test="updatedAtFrom != null">
+                AND updated_at &gt;= #{updatedAtFrom}
+            </if>
+            <if test="updatedAtTo != null">
+                AND updated_at &lt;= #{updatedAtTo}
+            </if>
+        ORDER BY created_at DESC
+    </select>
+
+    <select id="existsByUsername" parameterType="string" resultType="boolean">
+        SELECT EXISTS(
+            SELECT 1
+            FROM users
+            WHERE username = #{username}
+            AND delete_flag = false
+        )
+    </select>
+</mapper>
