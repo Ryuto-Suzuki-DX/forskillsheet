@@ -15,7 +15,4 @@ public class UserEntity {
     private LocalDate createdAt;
     private LocalDate updatedAt;
 
-    public String getPassword() {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
 }
