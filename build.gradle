@@ -38,9 +38,10 @@ dependencies {
     // PostgreSQL JDBC Driver
     implementation 'org.postgresql:postgresql'
 
-    // Lombok
-    implementation 'org.projectlombok:lombok'
+    // Lombok（修正版：compileOnly & annotationProcessor）
+    compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
+    testCompileOnly 'org.projectlombok:lombok'
     testAnnotationProcessor 'org.projectlombok:lombok'
 
     // 開発用 (Hot reload など)
@@ -51,6 +52,9 @@ dependencies {
 
     //CSV用
     implementation 'org.apache.commons:commons-csv:1.11.0'
+
+    //　新規追加！！　天気用API
+    implementation 'org.springframework.boot:spring-boot-starter-web'
 }
 
 tasks.register('runPasswordGenerator', JavaExec) {

@@ -13,13 +13,37 @@
         <h1>ShelfSyncへようこそ</h1>
         <p>ここでは製品の管理や情報の更新が行えます。</p>
     </div>
+
     <div>
         <form action="/login" method="post">
             <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}"/>
             <button type="submit">ログアウト</button>
         </form>
     </div>
+
+    <div class="weather-section">
+        <h2>大阪の天気</h2>
+        <table border="1">
+            <thead>
+                <tr>
+                    <th>日付</th>
+                    <th>曜日</th>
+                    <th>天気</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="f : ${forecasts}">
+                    <td th:text="${f.date}"></td>
+                    <td th:text="${f.dateLabel}"></td>
+                    <td>
+                        <span th:text="${f.telop}"></span>
+                        <img th:src="${f.image.url}" alt="天気画像" width="40" height="25">
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
     <div th:replace="~{fragment/fragment :: footer}"></div>
-    
 </body>
 </html>
